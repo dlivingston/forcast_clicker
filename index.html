@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Forcast Clicker</title>
+	<style>
+		#map {
+			height: 500px;
+			flex: 1 1 50%;
+		}
+		.container {
+			width: 1000px;
+			margin: 0 auto;
+			display: flex;
+		}
+		header {
+			max-width: 1000px;
+			margin: 0 auto;
+		}
+		header h3 {text-align: center;}
+		#data {
+			flex: 1 1 50%;
+			margin-left: 10px;
+		}
+		#data table {
+			border-collapse: collapse;
+			width: 100%;
+		}
+		#data table tr {
+			display: flex;
+		}
+		#data tr:nth-child(odd) {
+			background: #F7DFA4;
+		}
+		#data tr:nth-child(even) {
+			background: #E3ECEF;
+		}
+
+		#data table td {
+			padding: 8px 5px;
+			flex: 1 1 70%;
+		}
+		#data table td:first-child {
+			font-weight: bold;
+			text-align: right;
+			flex: 1 1 30%;
+		}
+	</style>
+</head>
+<body>
+	<header>
+		<h3>Click a point on the map to see current weather information for that location</h3>
+	</header>
+	<div class="container">
+		<div id="map"></div>
+		<div id="data">
+			<table>
+				<tr>
+					<td>Location</td>
+					<td id="locData"></td>
+				</tr>
+				<tr>
+					<td>Condition</td>
+					<td id="conData"></td>
+				</tr>
+				<tr>
+					<td>Temperature</td>
+					<td id="tempData"></td>
+				</tr>
+				<tr>
+					<td>Humidity</td>
+					<td id="humidData"></td>
+				</tr>
+				<tr>
+					<td>Sunrise</td>
+					<td id="sunriseData"></td>
+				</tr>
+				<tr>
+					<td>Sunset</td>
+					<td id="sunsetData"></td>
+				</tr>
+				<tr>
+					<td>Wind Speed</td>
+					<td id="wsData"></td>
+				</tr>
+				<tr>
+					<td>Wind Direction</td>
+					<td id="wdData"></td>
+				</tr>
+			</table>
+		</div>
+	</div>
+	<script>
+		function initMap() {	
+			var loc = {lat: 40.776303, lng: -111.894228};
+			var map = new google.maps.Map(document.getElementById('map'), {
+				zoom: 10,
+				center: loc
+			});
+			var marker = new google.maps.Marker({
+				position: loc,
+				map: map, 
+				draggable: true
+			});
+			getWeatherData(loc.lat, loc.lng);
+			marker.addListener('dragend', function(e){
+				loc = e.latLng;
+				getWeatherData(loc.lat(), loc.lng());
+
+			});
+			map.addListener('click', function(e){
+				loc = e.latLng;
+				marker.setPosition(loc);
+				map.panTo(loc);
+				getWeatherData(loc.lat(), loc.lng());
+			});
+		}
+		function getWeatherData(lat, lng){
+			var xhr = new XMLHttpRequest();
+			var weatherData = {};
+			var weatherUrl = 'http://api.openweathermap.org/data/2.5/weather?';
+			var weatherAPIkey = 'appid=bc4663bb24e7c2a51cf2b7458505bfe4';
+			xhr.open("GET", weatherUrl + "lat=" + lat + "&lon=" + lng + "&" + weatherAPIkey + "&units=imperial", true);
+			xhr.onreadystatechange = function() {
+				if (xhr.readyState == 4) {
+					if (xhr.status == 200) {
+						weatherData = xhr.responseText;
+						updateData(weatherData);
+					}
+				}
+			}
+			xhr.send();
+		}
+		function updateData(data){
+			var dataParse = JSON.parse(data);
+			document.getElementById("locData").innerHTML = dataParse.name;
+			document.getElementById("conData").innerHTML = dataParse.weather[0].main;
+			document.getElementById("tempData").innerHTML = dataParse.main.temp + "&deg; F";
+			document.getElementById("humidData").innerHTML = dataParse.main.humidity + "%";
+			var srTime = new Date(dataParse.sys.sunrise*1000);
+			document.getElementById("sunriseData").innerHTML = srTime.getHours() + ":" + ("0" + srTime.getMinutes()).substr(-2);
+			var ssTime = new Date(dataParse.sys.sunset*1000);
+			document.getElementById("sunsetData").innerHTML = ssTime.getHours() + ":" + ("0" + ssTime.getMinutes()).substr(-2);
+			document.getElementById("wsData").innerHTML = dataParse.wind.speed + " mph";
+			document.getElementById("wdData").innerHTML = dataParse.wind.deg + " degrees";
+		}
+	</script>
+	<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAkGKgA86GR8rJU64qGUhvkkRoCVrkBvWs&callback=initMap"></script>
+</body>
+</html>
